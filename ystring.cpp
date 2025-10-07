@@ -32,6 +32,23 @@ YString::YString(const YString &str) : YString((const char *)str,str._len)
 {
 }
 
+YString::YString(YString&& str) noexcept : YString() 
+{
+    if (str._str != str._sbuf) {
+        _str = str._str;
+        _len = str._len;
+        _cap = str._cap;
+        str._str = str._sbuf;
+        str._len = 0;
+        str._cap = YSTR_SBUF_SIZE - 1;
+    }
+    else {
+        const YString& s = str;
+        *this = s;
+        str.clear();
+    }
+}
+
 YString::YString(char c) : YString()
 {
     _str[0] = c;
@@ -84,6 +101,24 @@ YString &YString::operator=(const YString &s)
     memcpy(_str,s,s._len);
     _str[s._len] = '\0';
     _len = s._len;
+    return *this;
+}
+
+YString& YString::operator=(YString&& s) noexcept
+{
+    if (s._str != s._sbuf) {
+        _str = s._str;
+        _len = s._len;
+        _cap = s._cap;
+        s._str = s._sbuf;
+        s._len = 0;
+        s._cap = YSTR_SBUF_SIZE - 1;
+    }
+    else {
+        const YString& ls = s;
+        *this = ls;
+        s.clear();
+    }
     return *this;
 }
 
@@ -244,7 +279,7 @@ bool YString::compareNoCase(const char *s)
     return true;
 }
 
-void YString::clear()
+void YString::clear() noexcept
 {
     _len = 0;
     _str[_len] = '\0';

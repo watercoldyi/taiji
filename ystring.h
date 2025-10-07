@@ -4,7 +4,7 @@
 #include <cstdint>
 #include <vector>
 
-#define YSTR_SBUF_SIZE  128
+#define YSTR_SBUF_SIZE  32
 
 class YString
 {
@@ -13,6 +13,7 @@ public:
     YString(const char *str);
     YString(const char *str,int len);
     YString(const YString &str);
+    YString(YString &&str) noexcept;
     YString(char c);
     YString(double v);
     YString(int64_t v);
@@ -22,6 +23,7 @@ public:
 
     YString & operator=(const char *s);
     YString & operator=(const YString &s);
+    YString & operator=(YString &&s) noexcept;
 
     bool operator ==(const char* s);
     
@@ -56,7 +58,7 @@ public:
     bool compare(const char *s);
     bool compareNoCase(const char *s);
 
-    void clear();
+    void clear() noexcept;
     void trime();
 
     std::vector<YString> split(const char *token);
