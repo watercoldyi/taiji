@@ -5,7 +5,11 @@
 #include <stdarg.h>
 #include <ctype.h>
 #include <assert.h>
+#ifdef _WIN32
+#include <Windows.h>
+#else
 #include <sys/time.h>
+#endif
 #include <time.h>
 #include <stdio.h>
 
@@ -32,9 +36,19 @@ static int currentTimeInt64(int64_t *piNow)
 {
     static const int64_t unixEpoch = 24405875 * (int64_t)8640000;
     int rc = 0;
+#ifdef _WIN32
+    FILETIME tm;
+    ULARGE_INTEGER ui;
+    GetSystemTimeAsFileTime(&tm);
+    ui.LowPart = tm.dwLowDateTime;
+    ui.HighPart = tm.dwHighDateTime;
+    uint64_t msec = (ui.QuadPart - (uint64_t)(116444736000000000ULL)) / 10000;
+    *piNow = unixEpoch + msec;
+#else
     struct timeval sNow;
     (void)gettimeofday(&sNow, 0); /* Cannot fail given valid arguments */
     *piNow = unixEpoch + 1000 * (int64_t)sNow.tv_sec + sNow.tv_usec / 1000;
+#endif
     return rc;
 }
 
@@ -1157,7 +1171,6 @@ double dt_julianday(int argc, ...)
     if (isDate(argc, argv, &x) == 0)
     {
         computeJD(&x);
-        printf("jd %llu\n", x.iJD);
         return (double)x.iJD / 86400000.0;
     }
     return 0.0;
@@ -1177,7 +1190,7 @@ const char *dt_datetime(int argc, ...)
     if (isDate(argc, argv, &x) == 0)
     {
         int Y, s;
-        static __thread char zBuf[32];
+        static __declspec(thread) char zBuf[32];
         computeYMD_HMS(&x);
         Y = x.Y;
         if (Y < 0)
@@ -1263,7 +1276,7 @@ const char *dt_date(int argc, ...)
     if (isDate(argc, argv, &x) == 0)
     {
         int Y;
-        static __thread char zBuf[16];
+        static __declspec(thread) char zBuf[16];
         computeYMD(&x);
         Y = x.Y;
         if (Y < 0)
@@ -1306,7 +1319,7 @@ const char *dt_time(int argc, ...)
     if (isDate(argc, argv, &x) == 0)
     {
         int s, n;
-        static __thread char zBuf[16];
+        static __declspec(thread) char zBuf[16];
         computeHMS(&x);
         zBuf[0] = '0' + (x.h / 10) % 10;
         zBuf[1] = '0' + (x.h) % 10;
@@ -1363,7 +1376,7 @@ const char *dt_timediff(int argc, ...)
     DateTime d1, d2;
     va_list ap;
     char *argv[32];
-    static __thread char sres[32];
+    static __declspec(thread) char sres[32];
     sres[0] = 0;
     if (argc < 2)
         return NULL;
@@ -1605,7 +1618,7 @@ const char *dt_strftime(const char *zFmt, int argc, ...)
 {
     DateTime x;
     size_t i, j;
-    static __thread dt_str sRes;
+    static __declspec(thread) dt_str sRes;
     va_list ap;
     char *argv[32];
     va_start(ap, argc);
